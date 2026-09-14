@@ -1,0 +1,6 @@
+{
+  "name": "JokerHand.Editor",
+  "rootNamespace": "JokerHand.Editor",
+  "references": ["JokerHand"],
+  "includePlatforms": ["Editor"]
+}

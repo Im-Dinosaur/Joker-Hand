@@ -1,0 +1,63 @@
+{
+  "version": "0.2",
+  "snapshot_date": "2026-09-15",
+  "folder_url": "https://drive.google.com/drive/folders/1fegXSCeXbonvlz4YPeQ-uE3gRwb4fOVf",
+  "auto_sync": false,
+  "documents": [
+    {
+      "number": 0,
+      "stem": "00_Game_Overview",
+      "title": "게임 개요와 핵심 루프",
+      "document_id": "1lX5IUVlKuw1VK0h-uhiWC4fRFIG6AZm0v3D2gNZWr9Y",
+      "url": "https://docs.google.com/document/d/1lX5IUVlKuw1VK0h-uhiWC4fRFIG6AZm0v3D2gNZWr9Y",
+      "mime_type": "application/vnd.google-apps.document",
+      "revision_id": "ANLCKQlfTd_oi6OfQ8lKoprScGwsYXvJpIf-2fwDbWsAOj8LqTnCNgdJ6Exqswmvi0D-k7dB6iVeG-g4ffIFmN6XFfqc3Oz99qQRzemLoIU",
+      "snapshot": "00_Game_Overview.md",
+      "content_verified": true
+    },
+    {
+      "number": 1,
+      "stem": "01_Match_System",
+      "title": "대전 시스템과 화면 명세",
+      "document_id": "1ZCsPXgiHvVHjejG_hgm131xprKsXz1OlbVUVcZr01oA",
+      "url": "https://docs.google.com/document/d/1ZCsPXgiHvVHjejG_hgm131xprKsXz1OlbVUVcZr01oA",
+      "mime_type": "application/vnd.google-apps.document",
+      "revision_id": "ANLCKQmFEOT4PMrJSWxLx1TBIaX6t0rHq7liOImY4PIVGUCDFlySGKn_EIdjHHsIO6-dn120JgMGx-nNbH9ZJ-CCUnzPVYlpLqeHcPnlMUs",
+      "snapshot": "01_Match_System.md",
+      "content_verified": true
+    },
+    {
+      "number": 2,
+      "stem": "02_Scoring_System",
+      "title": "족보와 점수 시스템",
+      "document_id": "1WPzZx-Jx82CLlVoN8Dl5BELzhvxld4xl7Vl_bodN8ZA",
+      "url": "https://docs.google.com/document/d/1WPzZx-Jx82CLlVoN8Dl5BELzhvxld4xl7Vl_bodN8ZA",
+      "mime_type": "application/vnd.google-apps.document",
+      "revision_id": "ANLCKQmD0Ur6EgRH2MU5o1I3uzsCvRV7sbnqQVrpuUiewHzMuldXslHmQccdT1bHtAun3UhGLSlMF1EKVsVrA3cLBBUdezuJ6Z1EmozmuQM",
+      "snapshot": "02_Scoring_System.md",
+      "content_verified": true
+    },
+    {
+      "number": 3,
+      "stem": "03_Joker_Catalog",
+      "title": "조커 상세 기획",
+      "document_id": "1CfJwgKh8VxAxKt5ECpwFdQSK7p4TPbaVNEFuLEER5VI",
+      "url": "https://docs.google.com/document/d/1CfJwgKh8VxAxKt5ECpwFdQSK7p4TPbaVNEFuLEER5VI",
+      "mime_type": "application/vnd.google-apps.document",
+      "revision_id": "ANLCKQlG75n12qjHAW9Df3Unx5J-u9BbhN-Z_C5SuBWV8U85x-yXZVV5E7gGxKESq9tMy3dbSXJPLrxh1C6fOY_G7xEIkZfZuZCK7CmtQdY",
+      "snapshot": "03_Joker_Catalog.md",
+      "content_verified": true
+    },
+    {
+      "number": 4,
+      "stem": "04_Progression_AI_Development",
+      "title": "성장과 AI 및 개발 관리",
+      "document_id": "1tnwD3k2Z0tlZIs8axBJAnlffXd3Ubl4z81vlza_zip4",
+      "url": "https://docs.google.com/document/d/1tnwD3k2Z0tlZIs8axBJAnlffXd3Ubl4z81vlza_zip4",
+      "mime_type": "application/vnd.google-apps.document",
+      "revision_id": "ANLCKQnCpAMSRAMHl9flQo9301-xh6SeTQWqfc5-bmcYhiuXTn6QBoLYyUKcp91i5rgsdsjq_hdZaLLsasJeqmmz7TeNsu9d2kH6HUMQ1HA",
+      "snapshot": "04_Progression_AI_Development.md",
+      "content_verified": true
+    }
+  ]
+}

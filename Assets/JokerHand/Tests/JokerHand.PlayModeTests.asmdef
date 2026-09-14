@@ -1,0 +1,6 @@
+{
+  "name": "JokerHand.PlayModeTests",
+  "references": ["JokerHand"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "autoReferenced": false
+}
