@@ -22,6 +22,11 @@ namespace JokerHand
         private GUIStyle title, heading, body, card, button;
         private string aiStatus = "";
         private string lastError = "";
+        private bool predictionOpen, resultsOpen;
+        private static readonly Rect ConfirmRect = new Rect(790, 820, 220, 80);
+        public string ConfirmationLabel => match == null || match.Ready(0) ? null
+            : match.Stage == MatchStage.Exchange ? "교체 확정"
+            : match.Stage == MatchStage.JokerChoice ? "조커 확정" : null;
         private static readonly Color Green = new Color(.3f, .95f, .6f);
         private static readonly Color Red = new Color(1f, .35f, .4f);
 
@@ -37,7 +42,7 @@ namespace JokerHand
             // Both loadouts are visible. The test opponent cycles through varied, distinct types.
             var aiLoadout = Enum.GetValues(typeof(Joker)).Cast<Joker>().OrderBy(_ => seeds.Next()).Take(3).ToArray();
             match = new Match(loadout, aiLoadout, seeds.Next());
-            lastError = ""; ScheduleAi();
+            lastError = ""; predictionOpen = resultsOpen = false; ScheduleAi();
         }
         private void ScheduleAi()
         {
@@ -102,6 +107,16 @@ namespace JokerHand
         private void OnGUI()
         {
             InitStyles();
+            if (match != null)
+            {
+                var previousMatrix = GUI.matrix;
+                float fit = Mathf.Min(Screen.width / 1920f, Screen.height / 1080f);
+                GUI.matrix = Matrix4x4.TRS(new Vector3((Screen.width - 1920 * fit) / 2,
+                    (Screen.height - 1080 * fit) / 2, 0), Quaternion.identity, new Vector3(fit, fit, 1));
+                DrawTable();
+                GUI.matrix = previousMatrix;
+                return;
+            }
             float scale = Mathf.Max(.3f, Mathf.Min(Screen.width / 1180f, Screen.height / 840f));
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1));
             GUILayout.BeginArea(new Rect(20, 12, Screen.width / scale - 40, Screen.height / scale - 24));
@@ -109,7 +124,7 @@ namespace JokerHand
             GUILayout.Label("JOKER HAND  ·  중급 AI 프로토타입", title);
             Text("PC 테스트 · 개인 카드 2장 + 공용 카드 5장 · 조커 후보 3장 중 1장 선택");
             GUILayout.Space(8);
-            if (match == null) DrawPreparation(); else DrawMatch();
+            DrawPreparation();
             if (lastError.Length > 0) Text(lastError);
             GUILayout.EndScrollView(); GUILayout.EndArea();
         }
@@ -132,103 +147,246 @@ namespace JokerHand
             if (Button("중급 AI와 대결 시작", GUILayout.Height(55))) StartMatch();
             GUI.enabled = true;
         }
-        private void DrawReady(int player, string name)
+        private bool DecisionStage => match.Stage == MatchStage.Exchange || match.Stage == MatchStage.JokerChoice;
+
+        private void Panel(Rect rect, string label)
         {
+            GUI.Box(rect, GUIContent.none);
+            GUI.Label(new Rect(rect.x + 14, rect.y + 10, rect.width - 28, 32), label, heading);
+        }
+        private void ReadyAt(int player, Rect rect)
+        {
+            if (!DecisionStage) return;
             GUI.contentColor = match.Ready(player) ? Green : Red;
-            GUILayout.Label(name + (match.Ready(player) ? "  READY" : "  NOT READY"), heading);
+            GUI.Label(rect, match.Ready(player) ? "READY" : "NOT READY", heading);
             GUI.contentColor = Color.white;
         }
-        private void DrawMatch()
+        private Card[] HighlightedCards()
         {
-            bool decision = match.Stage == MatchStage.Exchange || match.Stage == MatchStage.JokerChoice;
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(match.Stage == MatchStage.Exchange ? "1. 개인 카드 교체" : match.Stage == MatchStage.JokerChoice ? "2. 조커 선택" : "3. 결과 공개", heading);
-            if (decision)
+            if (match.Forfeited) return Array.Empty<Card>();
+            if (DecisionStage)
             {
-                GUILayout.Label($"남은 시간 {Math.Ceiling(match.SecondsLeft)}초", heading);
-                if (Button("기권", GUILayout.Width(90))) match.Forfeit(0);
+                // The selected joker can choose a different five-card selection among equally strong poker hands.
+                if (match.OwnSelection(0).HasValue)
+                    return Scoring.Calculate(match.CurrentContext(0), match.OwnSelection(0).Value).Hand.Cards;
+                return Poker.BestSelections(match.VisibleHole(0, 0).Concat(match.Board).ToArray())[0].Cards;
             }
-            GUILayout.EndHorizontal();
-            Text("AI 후보: " + string.Join(" / ", match.Candidates(1).Select(JokerName)));
-            foreach (var j in match.Candidates(1)) Text("  " + JokerName(j) + ": " + Labels.Effects[(int)j]);
-            if (decision) { DrawReady(1, "상대"); Text(aiStatus); }
-            DrawCards(match.VisibleHole(0, 1), "상대 개인 카드", true);
-            DrawCards(match.Board, "공용 카드", false);
+            return match.RevealElapsed >= 1 ? match.Results[0].Hand.Cards : Array.Empty<Card>();
+        }
+        private void CardAt(Rect rect, Card? value, bool selected, bool highlighted, int exchangeSlot = -1)
+        {
+            GUI.backgroundColor = selected ? new Color(.95f, .58f, .2f) : highlighted ? new Color(.3f, .8f, .6f) : Color.white;
+            string label = value.HasValue ? value.Value.ToString() : "뒷면";
+            if (selected) label += "\n교체";
+            if (exchangeSlot >= 0 && match.Stage == MatchStage.Exchange)
+            {
+                bool wasEnabled = GUI.enabled;
+                GUI.enabled = wasEnabled && !match.Ready(0);
+                if (GUI.Button(rect, label, button)) match.SelectExchange(0, match.ExchangeMask(0) ^ (1 << exchangeSlot));
+                GUI.enabled = wasEnabled;
+            }
+            else GUI.Box(rect, label, card);
+            GUI.backgroundColor = Color.white;
+            if (selected || highlighted)
+            {
+                Color previous = GUI.color;
+                GUI.color = selected ? new Color(1f, .62f, .2f) : Green;
+                GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, 4), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(rect.x, rect.yMax - 4, rect.width, 4), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(rect.x, rect.y, 4, rect.height), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(rect.xMax - 4, rect.y, 4, rect.height), Texture2D.whiteTexture);
+                GUI.color = previous;
+            }
+        }
+        private void DrawTable()
+        {
+            // One letterboxed 16:9 canvas follows the user's sketch at every window size.
+            bool decision = DecisionStage;
+            if (!decision || match.Ready(0)) predictionOpen = false;
+            bool modal = predictionOpen || resultsOpen;
+            GUI.enabled = !modal;
+            GUI.Label(new Rect(30, 12, 600, 48), "JOKER HAND", title);
+            GUI.Label(new Rect(680, 20, 900, 36), match.Stage == MatchStage.Exchange ? "1. 개인 카드 교체"
+                : match.Stage == MatchStage.JokerChoice ? "2. 조커 선택" : "3. 결과 공개", heading);
+            if (decision && GUI.Button(new Rect(1780, 15, 110, 42), "기권", button)) match.Forfeit(0);
+
+            DrawCandidates(1, new Rect(320, 75, 770, 210));
+            Panel(new Rect(1140, 75, 420, 210), "상대 개인 카드");
+            ReadyAt(1, new Rect(1390, 85, 160, 32));
+            var other = match.VisibleHole(0, 1);
+            for (int i = 0; i < 2; i++)
+                CardAt(new Rect(1200 + i * 165, 122, 140, 150), other.Length == 2 ? other[i] : (Card?)null, false, false);
+
+            var highlighted = HighlightedCards();
+            Panel(new Rect(320, 355, 1240, 310), "공용 카드");
+            var board = match.Board;
+            for (int i = 0; i < 5; i++)
+            {
+                var rect = new Rect(355 + i * 237, 407, 218, 235);
+                if (i < board.Length) CardAt(rect, board[i], false, highlighted.Contains(board[i]));
+                else GUI.Box(rect, (i + 1) + "\n공개 대기", card);
+            }
+            DrawStatus();
+            Panel(new Rect(1620, 355, 270, 310), "버린 패");
+            GUI.Label(new Rect(1640, 415, 230, 80), match.Stage == MatchStage.Exchange
+                ? "양쪽 교체 확정 후\n동시에 공개" : "나\n" + DiscardsText(0), body);
             if (match.Stage != MatchStage.Exchange)
-                Text("버린 카드  ·  나: " + CardsText(match.PublicDiscards(0)) + "  /  상대: " + CardsText(match.PublicDiscards(1)));
+                GUI.Label(new Rect(1640, 520, 230, 100), "상대\n" + DiscardsText(1), body);
+
+            Panel(new Rect(240, 710, 510, 290), "내 개인 카드");
+            ReadyAt(0, new Rect(565, 722, 170, 32));
+            var own = match.VisibleHole(0, 0);
+            for (int i = 0; i < own.Length; i++)
+                CardAt(new Rect(300 + i * 210, 762, 175, 220), own[i],
+                    match.Stage == MatchStage.Exchange && (match.ExchangeMask(0) & (1 << i)) != 0,
+                    highlighted.Contains(own[i]), i);
+            DrawCandidates(0, new Rect(1040, 710, 850, 290));
+
+            // Confirmation disappears as soon as the local selection locks, even while the opponent is choosing.
+            string confirm = ConfirmationLabel;
+            if (confirm != null)
+            {
+                bool wasEnabled = GUI.enabled;
+                GUI.enabled = wasEnabled && (match.Stage == MatchStage.Exchange || match.OwnSelection(0).HasValue);
+                if (GUI.Button(ConfirmRect, confirm, button)) match.Confirm(0);
+                GUI.enabled = wasEnabled;
+            }
+            else if (DecisionStage)
+                GUI.Label(new Rect(790, 828, 220, 80), "상대 선택을\n기다리는 중", body);
+
+            if (match.Stage == MatchStage.JokerChoice && match.OwnSelection(0) == Joker.Prediction)
+            {
+                string prediction = "예측: " + (match.OwnPrediction(0)?.ToString() ?? "없음");
+                bool wasEnabled = GUI.enabled;
+                GUI.enabled = wasEnabled && !match.Ready(0);
+                if (GUI.Button(new Rect(1130, 668, 650, 38), prediction + " · 숫자 / 무늬 지정", button)) predictionOpen = true;
+                GUI.enabled = wasEnabled;
+            }
+            if (!DecisionStage && !match.Forfeited)
+            {
+                DrawScoreRibbon(1, new Rect(320, 289, 1240, 62));
+                DrawScoreRibbon(0, new Rect(240, 1008, 1650, 64));
+            }
+            else if (DecisionStage)
+                GUI.Label(new Rect(240, 1014, 1650, 50), match.Stage == MatchStage.Exchange
+                    ? "교체할 카드를 탭해 선택 / 해제 · 0~2장 한 번 교체 · 주황색: 교체 대상 · 초록색: 현재 족보 구성"
+                    : "현재 점수는 마지막 카드에 따라 달라져. 선택하지 않고 시간이 끝나면 현재 점수가 가장 높은 조커로 자동 확정돼.", body);
+
+            if (match.Stage == MatchStage.Complete)
+            {
+                if (!match.Forfeited && GUI.Button(new Rect(790, 710, 220, 56), "점수 상세", button)) resultsOpen = true;
+                if (GUI.Button(new Rect(790, 930, 220, 60), "준비 화면으로", button)) match = null;
+            }
+            GUI.enabled = true;
+            if (match == null) return;
+            if (predictionOpen || resultsOpen) DrawModal();
+            if (lastError.Length > 0) GUI.Label(new Rect(30, 62, 1800, 34), lastError, body);
+        }
+        private string DiscardsText(int player)
+        {
+            var cards = match.PublicDiscards(player);
+            return cards.Length == 0 ? "없음" : CardsText(cards);
+        }
+        private void DrawStatus()
+        {
+            Panel(new Rect(20, 355, 270, 310), "현재 족보 · 점수");
             if (match.Forfeited)
             {
-                Text("기권 처리 · 보상 없음");
-                if (Button("준비 화면으로")) match = null;
+                GUI.Label(new Rect(38, 410, 235, 225), "기권 패배\n보상 없음", heading);
                 return;
             }
-            if (decision) DrawReady(0, "나");
-            DrawCards(match.VisibleHole(0, 0), "내 개인 카드", false, match.Stage == MatchStage.Exchange);
-            if (match.Stage == MatchStage.Exchange) DrawExchange();
-            else if (match.Stage == MatchStage.JokerChoice) DrawJokerChoice();
-            else DrawResults();
-        }
-        private void DrawCards(Card[] cards, string label, bool hidden, bool selectable = false)
-        {
-            Card[] highlighted = Array.Empty<Card>();
-            if (!hidden && !match.Forfeited)
+            if (DecisionStage)
             {
-                if (match.Stage == MatchStage.Exchange || match.Stage == MatchStage.JokerChoice)
-                    highlighted = Scoring.Calculate(match.CurrentContext(0), match.OwnSelection(0) ?? match.Candidates(0)[0]).Hand.Cards;
-                else if (match.RevealElapsed >= 1) highlighted = match.Results[0].Hand.Cards;
+                var context = match.CurrentContext(0);
+                var hand = Poker.BestSelections(match.VisibleHole(0, 0).Concat(match.Board).ToArray())[0];
+                string score = hand.Points.ToString("N0") + "점\n조커 적용 전";
+                if (match.OwnSelection(0).HasValue)
+                    score = Scoring.Calculate(context, match.OwnSelection(0).Value).Total.ToString("N0") + "점\n선택 조커 적용";
+                GUI.Label(new Rect(38, 410, 235, 120), Labels.Hands[(int)hand.Category] + "\n" + score, heading);
+                GUI.Label(new Rect(38, 555, 235, 40), Math.Ceiling(match.SecondsLeft) + "초 남음", heading);
+                GUI.Label(new Rect(38, 608, 235, 46), aiStatus, body);
             }
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(label, body, GUILayout.Width(140));
-            if (hidden && cards.Length == 0) GUILayout.Box("?     ?", card, GUILayout.Width(200), GUILayout.Height(54));
-            for (int i = 0; i < cards.Length; i++)
+            else
             {
-                bool chosen = selectable && (match.ExchangeMask(0) & (1 << i)) != 0;
-                GUI.backgroundColor = chosen ? new Color(.9f, .55f, .2f) : highlighted.Contains(cards[i]) ? new Color(.3f, .8f, .6f) : Color.white;
-                if (selectable)
-                {
-                    GUI.enabled = !match.Ready(0);
-                    if (Button(cards[i] + (chosen ? " 교체" : ""), GUILayout.Width(125), GUILayout.Height(54)))
-                        match.SelectExchange(0, match.ExchangeMask(0) ^ (1 << i));
-                    GUI.enabled = true;
-                }
-                else GUILayout.Box(cards[i].ToString(), card, GUILayout.Width(90), GUILayout.Height(54));
+                // Do not expose the final score before its animation stage.
+                string text = match.RevealElapsed < 1 ? "쇼다운 진행 중"
+                    : Labels.Hands[(int)match.Results[0].Hand.Category];
+                if (match.RevealElapsed >= 3.5) text += "\n" + (match.Results[0].ExactPrediction && match.RevealElapsed < 4.2
+                    ? (match.Results[0].Hand.Points + 12000).ToString("N0") : match.Results[0].Total.ToString("N0")) + "점";
+                if (match.Stage == MatchStage.Complete) text += "\n\n" + (match.Winner < 0 ? "무승부" : match.Winner == 0 ? "승리!" : "패배");
+                GUI.Label(new Rect(38, 413, 235, 225), text, heading);
             }
-            GUI.backgroundColor = Color.white;
-            GUILayout.EndHorizontal();
         }
-        private void DrawExchange()
+        private void DrawCandidates(int player, Rect area)
         {
-            var hand = Poker.BestSelections(match.VisibleHole(0, 0).Concat(match.Board).ToArray())[0];
-            Text($"현재 족보: {Labels.Hands[(int)hand.Category]}  ·  {CardsText(hand.Cards)}  ·  {hand.Points:N0}점 (조커 적용 전)");
-            Text("초록색은 현재 족보에 쓰이는 카드야. 교체할 카드를 탭해줘. 0~2장, 한 번만 교체하며 시간이 끝나면 현재 선택대로 확정돼.");
-            Text("내 후보: " + string.Join(" / ", match.Candidates(0).Select(JokerName)));
-            GUI.enabled = !match.Ready(0);
-            if (Button("교체 선택 확정", GUILayout.Height(48))) match.Confirm(0);
-            GUI.enabled = true;
-        }
-        private void DrawJokerChoice()
-        {
-            var context = match.CurrentContext(0);
-            Text("현재 기준 점수야. 5번째 카드에 따라 족보와 조건이 달라질 수 있어.");
-            foreach (var joker in match.Candidates(0))
+            Panel(area, player == 0 ? "내 조커 후보" : "상대 조커 후보");
+            var candidates = match.Candidates(player);
+            var revealed = match.RevealedJoker(player);
+            for (int i = 0; i < candidates.Length; i++)
             {
-                var score = Scoring.Calculate(context, joker);
-                bool selected = match.OwnSelection(0) == joker;
+                var joker = candidates[i];
+                bool selected = player == 0 ? match.OwnSelection(0) == joker : revealed == joker;
+                float width = (area.width - 48) / 3;
+                var rect = new Rect(area.x + 12 + i * (width + 12), area.y + 48, width, area.height - 60);
                 GUI.backgroundColor = selected ? new Color(.25f, .7f, .5f) : Color.white;
-                GUI.enabled = !match.Ready(0);
-                string future = joker == Joker.Prediction || joker == Joker.Flush ? " · 마지막 카드 조건 미확정" : " · 최종 패에서 재판정";
-                if (Button((selected ? "✓ " : "") + JokerName(joker) + $"  {score.Total:N0}점" + future + "\n" + Labels.Effects[(int)joker], GUILayout.Height(58)))
-                    match.SelectJoker(0, joker);
-                GUI.enabled = true;
+                string label = (selected ? "✓ " : "") + JokerName(joker);
+                bool preview = player == 0 && match.Stage == MatchStage.JokerChoice;
+                if (preview)
+                {
+                    GUI.Label(new Rect(rect.x, rect.y, rect.width, 38),
+                        Scoring.Calculate(match.CurrentContext(0), joker).Total.ToString("N0") + "점", heading);
+                    rect.y += 42; rect.height -= 42;
+                }
+                label += "\n" + Labels.Effects[(int)joker];
+                bool canChoose = player == 0 && match.Stage == MatchStage.JokerChoice && !match.Ready(0);
+                GUI.Box(rect, label, new GUIStyle(button) { alignment = TextAnchor.MiddleCenter });
+                if (preview && !selected)
+                {
+                    Color old = GUI.color;
+                    GUI.color = new Color(.45f, .45f, .45f, .52f);
+                    GUI.DrawTexture(rect, Texture2D.whiteTexture);
+                    GUI.color = old;
+                }
+                if (canChoose && GUI.Button(rect, GUIContent.none, GUIStyle.none)) match.SelectJoker(0, joker);
+                GUI.backgroundColor = Color.white;
             }
-            GUI.backgroundColor = Color.white;
-            var current = Scoring.Calculate(context, match.OwnSelection(0) ?? match.Candidates(0)[0]);
-            Text("현재 족보: " + Labels.Hands[(int)current.Hand.Category] + "  ·  " + CardsText(current.Hand.Cards));
-            if (match.OwnSelection(0) == Joker.Prediction) DrawPrediction();
-            Text("선택하지 않고 시간이 끝나면 현재 점수가 가장 높은 후보가 자동 확정돼. 동점이면 후보 순서대로 선택해.");
-            GUI.enabled = !match.Ready(0) && match.OwnSelection(0).HasValue;
-            if (Button("조커 선택 확정", GUILayout.Height(48))) match.Confirm(0);
-            GUI.enabled = true;
+        }
+        private void DrawScoreRibbon(int player, Rect rect)
+        {
+            double t = match.RevealElapsed;
+            var r = match.Results[player];
+            string text = (player == 0 ? "나" : "상대") + " · " + JokerName(match.RevealedJoker(player).Value);
+            if (t < .5) text += " · 마지막 공용 카드 공개 대기";
+            else if (t < 1) text += " · 개인 카드 동시 공개 대기";
+            else
+            {
+                text += " · " + Labels.Hands[(int)r.Hand.Category];
+                if (t >= 1.5) text += $" · 족보 {r.Hand.BasePoints:N0} + 숫자 {r.Hand.RankBonus:N0} = {r.Hand.Points:N0}";
+                if (t >= 2.5) text += $"\n기본 효과 +{r.BaseFlatBonus:N0} / ×{r.BaseMultiplier} → {r.AfterBaseEffect:N0}점";
+                if (t >= 2.5 && match.RevealedJoker(player) == Joker.Prediction)
+                    text += " · 예측 " + (match.RevealedPrediction(player)?.ToString() ?? "없음") + " / 실제 " + match.Board[4];
+                if (t >= 3.5) text += r.ExactPrediction && t < 4.2
+                    ? $" · 숫자 적중 +10,000 → {r.Hand.Points + 12000:N0}점"
+                    : $" · 총 가산 +{r.FlatBonus:N0} / ×{r.Multiplier} → {r.Total:N0}점" + (r.ExactPrediction ? " 완전 적중!" : "");
+            }
+            GUI.Label(rect, text, body);
+        }
+        private void DrawModal()
+        {
+            GUI.Box(new Rect(0, 0, 1920, 1080), GUIContent.none);
+            var rect = resultsOpen ? new Rect(260, 190, 1400, 700) : new Rect(360, 300, 1200, 390);
+            GUI.Box(rect, GUIContent.none);
+            GUILayout.BeginArea(new Rect(rect.x + 25, rect.y + 20, rect.width - 50, rect.height - 40));
+            GUILayout.Label(resultsOpen ? "최종 점수 상세" : "마지막 공용 카드 예측", heading);
+            if (Button("닫기", GUILayout.Width(100))) { predictionOpen = resultsOpen = false; }
+            if (resultsOpen)
+            {
+                scroll = GUILayout.BeginScrollView(scroll);
+                DrawResults();
+                GUILayout.EndScrollView();
+            }
+            else if (predictionOpen) DrawPrediction();
+            GUILayout.EndArea();
         }
         private void DrawPrediction()
         {

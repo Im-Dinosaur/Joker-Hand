@@ -20,16 +20,20 @@ namespace JokerHand.Tests
                 var field = typeof(Prototype).GetField("match", BindingFlags.NonPublic | BindingFlags.Instance);
                 var match = (Match)field.GetValue(component);
                 Assert.NotNull(match);
+                Assert.AreEqual("교체 확정", component.ConfirmationLabel);
                 match.SelectExchange(0, 1);
                 match.Confirm(0);
+                Assert.IsNull(component.ConfirmationLabel, "Local confirmation must hide the button while waiting for the opponent.");
                 float deadline = Time.realtimeSinceStartup + 12;
                 while (match.Stage == MatchStage.Exchange && Time.realtimeSinceStartup < deadline) yield return null;
                 Assert.AreEqual(MatchStage.JokerChoice, match.Stage, "AI must return an exchange decision before timeout.");
                 Assert.Less(match.SecondsLeft, 30.001);
                 Assert.Greater(match.SecondsLeft, 25);
+                Assert.AreEqual("조커 확정", component.ConfirmationLabel);
                 yield return null; // Draw and schedule the new phase before the player confirms.
                 match.SelectJoker(0, Joker.Hold);
                 match.Confirm(0);
+                Assert.IsNull(component.ConfirmationLabel);
                 deadline = Time.realtimeSinceStartup + 8;
                 while (match.Stage == MatchStage.JokerChoice && Time.realtimeSinceStartup < deadline) yield return null;
                 Assert.AreEqual(MatchStage.Reveal, match.Stage, "AI must choose a joker before timeout.");
@@ -39,9 +43,11 @@ namespace JokerHand.Tests
                 Assert.AreEqual(2, match.Results.Length);
                 Assert.Greater(match.Results[0].Total, 0);
                 Assert.Greater(match.Results[1].Total, 0);
+                Assert.IsNull(component.ConfirmationLabel, "Result screens must not display a confirmation button.");
                 yield return null; // Exercise the result screen too.
             }
             finally { Object.Destroy(root); }
         }
+
     }
 }

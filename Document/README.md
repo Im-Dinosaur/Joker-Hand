@@ -2,6 +2,8 @@
 
 기획 기준 버전 **0.2** · 최초 사본 기준일 **2026-09-15**
 
+화면 명세 개정 **1**: 사용자 [배치 스케치](./References/Match_Layout_Sketch.png)를 기준으로 문서 01의 배치·확정 버튼·조커 선택 표시와 문서 04의 구현 상태·미결정 항목을 갱신했다. 두 Google Docs의 변경 본문과 로컬 사본을 대조했다.
+
 [Google Drive 기획서 폴더](https://drive.google.com/drive/folders/1fegXSCeXbonvlz4YPeQ-uE3gRwb4fOVf)
 
 편집용 문서 5종을 실제 Google Docs 형식으로 만들었다. 프로젝트에는 Google Docs를 여는 `.url` 바로가기와 같은 내용의 `.md` 읽기용 사본을 보관한다. Google Docs 문서 본체는 클라우드에 있으며 이 폴더의 바로가기가 본문을 저장하는 것은 아니다.
@@ -41,4 +43,3 @@ Google Docs와 Markdown은 **자동 동기화되지 않는다**. 기획을 바�
 ## 현재 문서 확인 결과
 
 5종의 모든 본문·표 셀 내용을 Google Docs 읽기 결과와 대조했다. 실제 제목 계층과 표 구조, 본문 Arial·검정 서식, 순서 목록이 변환 후 유지되는 것을 확인했다. 내보내기 전 렌더링은 기본 렌더러의 LibreOffice 부재로 Word의 비표시 PDF 변환을 사용하여 전체 30쪽을 시각 검수했다. 문서 제작은 기존 게임 코드를 변경하거나 새 밸런스 수치를 확정하지 않았다.
-

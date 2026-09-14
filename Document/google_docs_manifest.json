@@ -22,9 +22,10 @@
       "document_id": "1ZCsPXgiHvVHjejG_hgm131xprKsXz1OlbVUVcZr01oA",
       "url": "https://docs.google.com/document/d/1ZCsPXgiHvVHjejG_hgm131xprKsXz1OlbVUVcZr01oA",
       "mime_type": "application/vnd.google-apps.document",
-      "revision_id": "ANLCKQmFEOT4PMrJSWxLx1TBIaX6t0rHq7liOImY4PIVGUCDFlySGKn_EIdjHHsIO6-dn120JgMGx-nNbH9ZJ-CCUnzPVYlpLqeHcPnlMUs",
+      "revision_id": "ANLCKQk-odc2QCfVaaATUDnm5sY5dsvuDPwC7qhoCzxFsaSRvEyG4UpaBUZpq-pO2Ptq3TZ8img9YMOLRIoubaCyMs4EMDnlxl1yTGuKxX4",
       "snapshot": "01_Match_System.md",
-      "content_verified": true
+      "content_verified": true,
+      "ui_revision": 1
     },
     {
       "number": 2,
@@ -55,9 +56,11 @@
       "document_id": "1tnwD3k2Z0tlZIs8axBJAnlffXd3Ubl4z81vlza_zip4",
       "url": "https://docs.google.com/document/d/1tnwD3k2Z0tlZIs8axBJAnlffXd3Ubl4z81vlza_zip4",
       "mime_type": "application/vnd.google-apps.document",
-      "revision_id": "ANLCKQnCpAMSRAMHl9flQo9301-xh6SeTQWqfc5-bmcYhiuXTn6QBoLYyUKcp91i5rgsdsjq_hdZaLLsasJeqmmz7TeNsu9d2kH6HUMQ1HA",
+      "revision_id": "ANLCKQl1ZQiE9XEJNM9_ldjFibUyCHEyfqy751fQeZ4ZW5YrvKTCOmB2lfl6lkbBESL053Y1G-_G5MtiutRr65O_jnzr0Bm4STUY9LzKQ4Y",
       "snapshot": "04_Progression_AI_Development.md",
-      "content_verified": true
+      "content_verified": true,
+      "ui_revision": 1
     }
-  ]
+  ],
+  "ui_revision": 1
 }

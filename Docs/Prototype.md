@@ -68,6 +68,10 @@ Unity 6000.6.0f1에서 프로젝트를 열고 **Joker Hand → Open Prototype** 
 
 ## 검증
 
+화면은 `Document/References/Match_Layout_Sketch.png`의 배치를 따른다. 내 카드와 조커 후보 사이의 버튼은 교체 단계에 `교체 확정`, 조커 단계에 `조커 확정`이며 본인 확정 후 숨긴다. 다음 선택 단계에는 다시 표시하고 결과에서는 숨긴다. 조커 후보에는 회색 반투명 덮개와 카드 위 현재 적용 점수를 표시한다. 후보 선택 시 덮개를 걷고 해당 후보로 최고 점수를 만드는 5장에 초록색 테두리를 표시한다. 최상위 포커 족보가 같은 복수 조합에서도 선택 조커의 점수를 기준으로 강조 대상을 정한다.
+
+화면 명세 개정 1 검증: PlayMode 검사에 확정 버튼의 단계별 문구와 본인 확정·결과 시 숨김 검사를 추가했다. Unity 에디터에서 1920×1080 Game 화면의 배치와 조커 덮개·점수·선택 전환을 직접 확인했다. 모바일 실기기 사용성은 후속 검증 대상이다.
+
 프로젝트 루트에서 PowerShell로 `./Tests/RunCoreChecks.ps1`을 실행한다. 설치된 .NET SDK의 C# 컴파일러를 직접 사용하므로 추가 패키지나 NuGet 연결은 필요하지 않다. 결과물은 무시되는 `Temp/CoreChecks`에 생성된다.
 
 일반 .NET 환경에서는 `dotnet run --project Tests/CoreHarness/CoreHarness.csproj --configuration Release`로도 실행할 수 있다.
